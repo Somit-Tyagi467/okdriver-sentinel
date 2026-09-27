@@ -70,6 +70,8 @@ The service is available at <http://127.0.0.1:8000>. SQLite data persists in the
 
 ## Architecture
 
+The full architecture note, including the source-to-dashboard diagram and database model, is available as [okDriver Sentinel Architecture (PDF)](output/pdf/okdriver-sentinel-architecture.pdf).
+
 ```mermaid
 flowchart LR
   subgraph Sources
