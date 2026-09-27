@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101715"><title>Sentinel | okDriver</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><link rel="stylesheet" href="/static/app.css"><link rel="stylesheet" href="/static/refinements.css">
+</head>
+<body>
+<div id="login" class="login-screen"><div class="login-card"><div class="brand-mark">◎</div><div class="eyebrow">OKDRIVER · OPERATIONS</div><h1>Sentinel</h1><p>Sign in to the city monitoring workspace.</p><form id="loginForm"><label>Username<input name="username" autocomplete="username" required></label><label>Password<input name="password" type="password" autocomplete="current-password" required></label><button class="primary wide">Enter workspace <span>→</span></button><small>Local demo passwords are configured in your .env file.</small></form><div id="loginError" class="error"></div></div></div>
+<div id="app" class="shell hidden">
+  <aside class="sidebar"><div class="brand"><div class="brand-mark">◎</div><div><b>okDriver</b><small>SENTINEL PLATFORM</small></div></div><div class="workspace"><span class="pulse"></span> AHMEDABAD COMMAND <i>⌄</i></div>
+    <div class="nav-label">WORKSPACE</div><nav>
+      <button class="nav active" data-view="overview"><span>▦</span>Overview</button>
+      <button class="nav" data-view="cameras"><span>◉</span>Camera registry</button>
+      <button class="nav" data-view="detections"><span>⌁</span>Detection history</button>
+      <button class="nav" data-view="tracking"><span>⌖</span>Vehicle tracking</button>
+      <button class="nav" data-view="alerts"><span>!</span>Alert center <em id="navAlerts">0</em></button>
+      <button class="nav" data-view="watchlist"><span>◎</span>Watchlist</button>
+      <button class="nav" data-view="audit"><span>▤</span>Audit log</button>
+    </nav>
+    <div class="side-bottom"><div class="side-label">INGESTION HEALTH</div><div class="health-box"><span class="pulse"></span><b>All systems operational</b><small>API · Event stream · Database</small></div><div class="account"><div class="avatar">OP</div><div><b id="accountName">Admin</b><small>Command operator</small></div><button id="logout" title="Sign out">↗</button></div></div>
+  </aside>
+  <main class="main"><header class="topbar"><div><div class="crumb">CONTROL ROOM <span>/</span> <b id="pageName">OVERVIEW</b></div><h1 id="greeting">Good morning, operator</h1></div><div class="top-actions"><div class="live-pill"><span class="pulse"></span> LIVE SYSTEM</div><div class="clock" id="clock"></div><button id="demoEvent" class="primary">＋ Generate detection</button></div></header>
+    <section class="content" id="overviewView">
+      <div class="stat-grid"><article class="stat-card"><div class="stat-head">CAMERAS ONLINE <span class="stat-icon green">◉</span></div><div class="stat-value" id="onlineCount">—</div><div class="stat-foot"><span id="cameraTotal">—</span> registered · <i>health monitor active</i></div></article><article class="stat-card"><div class="stat-head">OPEN ALERTS <span class="stat-icon red">!</span></div><div class="stat-value" id="openCount">—</div><div class="stat-foot"><b class="red-text">Watchlist matches</b><i>· live correlation</i></div></article><article class="stat-card"><div class="stat-head">DETECTIONS TODAY <span class="stat-icon blue">⌁</span></div><div class="stat-value" id="eventCount">—</div><div class="stat-foot">ANPR events <i>· persisted history</i></div></article><article class="stat-card"><div class="stat-head">SYSTEM HEALTH <span class="stat-icon green">⌁</span></div><div class="stat-value health-value">Nominal</div><div class="stat-foot">Event stream <b class="green-text">● Connected</b></div></article></div>
+      <div class="section-head"><div><h2>Live monitoring</h2><p>Multi-source video and camera health</p></div><div class="toolbar"><input id="cameraSearch" class="search" placeholder="⌕  Search cameras..."><select id="cameraFilter"><option value="">All status</option><option>Online</option><option>Degraded</option><option>Offline</option></select></div></div>
+      <div class="monitor-grid" id="feedGrid"></div>
+      <div class="lower-grid"><section class="panel map-panel"><div class="panel-head"><div><h2>Camera map</h2><p>Ahmedabad · live status and incident locations</p></div><span class="tag">GIS VIEW</span></div><div id="map"></div></section><section class="panel alerts-panel"><div class="panel-head"><div><h2>Priority alerts</h2><p>Watchlist matches requiring attention</p></div><button class="text-button" data-view="alerts">View alert center →</button></div><div id="alertList" class="alert-list"></div></section></div>
+      <div class="lower-grid history-grid"><section class="panel"><div class="panel-head"><div><h2>Recent detections</h2><p>Latest analytics events across the network</p></div><div class="tag"><span class="pulse"></span> STREAMING</div></div><div class="table-wrap"><table><thead><tr><th>ENTITY</th><th>CAMERA</th><th>TYPE</th><th>CONFIDENCE</th><th>TIME</th></tr></thead><tbody id="detectionRows"></tbody></table></div></section><section class="panel trace-panel"><div class="panel-head"><div><h2>Entity trace</h2><p>Search a vehicle across camera detections</p></div></div><form id="traceForm" class="trace-search"><input id="traceInput" placeholder="e.g. GJ01AB1234"><button class="primary">Trace →</button></form><div id="traceResult" class="trace-result empty">Enter a vehicle number to see its movement history.</div></section></div>
+    </section>
+    <section class="content hidden" id="camerasView"><div class="section-head page-section"><div><h2>Camera registry</h2><p>Manage camera sources, metadata and health.</p></div><button id="addCamera" class="primary admin-only">＋ Add camera</button></div><div class="panel"><div class="registry-toolbar"><input id="registrySearch" class="search" placeholder="⌕  Search by name, ID or zone"><select id="registryFilter"><option value="">All status</option><option>Online</option><option>Degraded</option><option>Offline</option></select><span id="registryCount" class="muted"></span></div><div class="table-wrap"><table><thead><tr><th>CAMERA</th><th>DEPARTMENT / ZONE</th><th>SOURCE</th><th>LOCATION</th><th>HEALTH</th><th>LAST HEARTBEAT</th><th></th></tr></thead><tbody id="cameraRows"></tbody></table></div></div><div class="panel audit-panel"><div class="panel-head"><div><h2>Audit activity</h2><p>Recent administrative and operator actions</p></div></div><div id="auditList" class="audit-list"></div></div></section>
+    <section class="content hidden" id="watchlistView"><div class="section-head page-section"><div><h2>Watchlist</h2><p>Manage synthetic entities for event correlation demonstration.</p></div><button id="addWatchlist" class="primary admin-only">＋ Add identifier</button></div><div class="panel"><div class="registry-toolbar"><span class="muted">Exact-match correlation runs when an analytics event is ingested.</span><span id="watchCount" class="tag"></span></div><div class="table-wrap"><table><thead><tr><th>IDENTIFIER</th><th>ENTITY TYPE</th><th>REASON</th><th>PRIORITY</th><th>STATUS</th><th>ADDED</th><th></th></tr></thead><tbody id="watchRows"></tbody></table></div></div><div class="privacy-note">Synthetic demonstration records only. Do not enter real personal or law-enforcement data in this prototype.</div></section>
+    <section class="content hidden" id="detectionsView">
+      <div class="section-head page-section"><div><h2>Detection history</h2><p>Search and review every stored vehicle event loaded from the event API.</p></div><div class="toolbar"><input id="historySearch" class="search" placeholder="Search plate number"><select id="historyCamera"><option value="">All cameras</option></select></div></div>
+      <div class="panel"><div class="registry-toolbar"><span class="muted" id="historyCount"></span></div><div class="table-wrap"><table><thead><tr><th>VEHICLE</th><th>CAMERA</th><th>EVENT</th><th>VEHICLE TYPE</th><th>CONFIDENCE</th><th>TIMESTAMP</th><th></th></tr></thead><tbody id="allDetectionRows"></tbody></table></div></div>
+    </section>
+    <section class="content hidden" id="trackingView">
+      <div class="section-head page-section"><div><h2>Vehicle tracking</h2><p>Every distinct vehicle identifier with at least one recorded detection.</p></div><div class="toolbar"><input id="entitySearch" class="search" placeholder="Filter recorded vehicles"><span id="entityCount" class="tag"></span></div></div>
+      <div class="panel"><div class="registry-toolbar"><span class="muted">Select Trace to load all known sightings for that vehicle in chronological order.</span></div><div class="table-wrap"><table><thead><tr><th>VEHICLE NUMBER</th><th>DETECTIONS</th><th>FIRST SEEN</th><th>LAST SEEN</th><th>LAST CAMERA</th><th></th></tr></thead><tbody id="entityRows"></tbody></table></div></div>
+      <div class="tracking-grid"><section class="panel"><div class="panel-head"><div><h2 id="trackingTitle">Movement timeline</h2><p id="trackingSubtitle">Choose a recorded vehicle above or enter a plate number.</p></div></div><form id="trackingForm" class="trace-search"><input id="trackingInput" placeholder="Vehicle number or partial plate"><button class="primary">Search and trace →</button></form><div id="trackingRoute" class="trace-result empty">No vehicle selected.</div></section><section class="panel map-panel"><div class="panel-head"><div><h2>Route map</h2><p>Recorded camera sightings, ordered in time</p></div><span class="tag">MOVEMENT</span></div><div id="trackingMap"></div></section></div>
+    </section>
+    <section class="content hidden" id="alertsView">
+      <div class="section-head page-section"><div><h2>Alert center</h2><p>Review, acknowledge, and resolve watchlist matches.</p></div><select id="alertFilter"><option value="">All statuses</option><option>Open</option><option>Acknowledged</option><option>Resolved</option></select></div>
+      <div class="panel"><div id="allAlertList" class="alert-list"></div></div>
+    </section>
+    <section class="content hidden" id="auditView">
+      <div class="section-head page-section"><div><h2>Audit log</h2><p>Recent operator, administrator, and automated camera-health actions.</p></div></div>
+      <div class="panel"><div class="panel-head"><div><h2>Activity history</h2><p>Newest entries first</p></div></div><div id="auditAllList" class="audit-list"></div></div>
+    </section>
+  </main>
+</div>
+<div id="modal" class="modal hidden"><div class="modal-backdrop"></div><div class="modal-card"><button class="modal-close" id="closeModal">×</button><div id="modalContent"></div></div></div><div id="toast" class="toast"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="/static/app.js"></script>
+</body></html>

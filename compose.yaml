@@ -1,0 +1,21 @@
+services:
+  sentinel:
+    build: .
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      OKDRIVER_ADMIN_PASSWORD: ${OKDRIVER_ADMIN_PASSWORD:?Set OKDRIVER_ADMIN_PASSWORD in .env}
+      OKDRIVER_OPERATOR_PASSWORD: ${OKDRIVER_OPERATOR_PASSWORD:?Set OKDRIVER_OPERATOR_PASSWORD in .env}
+      OKDRIVER_TOKEN_KEY: ${OKDRIVER_TOKEN_KEY:?Set OKDRIVER_TOKEN_KEY in .env}
+      OKDRIVER_DEMO_MODE: ${OKDRIVER_DEMO_MODE:-true}
+    volumes:
+      - sentinel-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  sentinel-data:

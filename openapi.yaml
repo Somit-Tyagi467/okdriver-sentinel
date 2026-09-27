@@ -1,0 +1,228 @@
+openapi: 3.1.0
+info:
+  title: okDriver Sentinel Demo API
+  version: 1.0.0
+  description: API for the synthetic camera, ANPR, watchlist, alert and audit prototype. JSON requests and responses.
+servers:
+  - url: http://127.0.0.1:8000
+security:
+  - bearerAuth: []
+paths:
+  /api/health:
+    get:
+      security: []
+      summary: Liveness check
+      responses:
+        '200': {description: Service is running}
+  /api/login:
+    post:
+      security: []
+      summary: Create an eight-hour bearer token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: {type: string, enum: [admin, operator]}
+                password: {type: string}
+      responses:
+        '200': {description: Token and role}
+        '401': {description: Invalid credentials}
+  /api/bootstrap:
+    get:
+      summary: Read dashboard snapshot
+      responses:
+        '200': {description: Camera, event, alert, watchlist and audit data}
+  /api/cameras:
+    get:
+      summary: List and filter cameras
+      parameters:
+        - {in: query, name: q, schema: {type: string}}
+        - {in: query, name: status, schema: {type: string, enum: [Online, Offline, Degraded]}}
+      responses:
+        '200': {description: Camera records}
+    post:
+      summary: Add a camera (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CameraInput'}
+      responses:
+        '201': {description: Camera created}
+        '400': {description: Invalid metadata}
+        '409': {description: Camera ID already exists}
+  /api/cameras/{camera_id}:
+    patch:
+      summary: Update camera metadata or status (admin)
+      parameters:
+        - {in: path, name: camera_id, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: {type: string}
+                department: {type: string}
+                status: {type: string, enum: [Online, Offline, Degraded]}
+                latitude: {type: number}
+                longitude: {type: number}
+      responses:
+        '200': {description: Updated camera}
+        '404': {description: Unknown camera}
+  /api/cameras/{camera_id}/heartbeat:
+    post:
+      summary: Update camera heartbeat and health
+      parameters:
+        - {in: path, name: camera_id, required: true, schema: {type: string}}
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: {type: string, enum: [Online, Offline, Degraded]}
+      responses:
+        '200': {description: Heartbeat accepted and broadcast}
+        '404': {description: Unknown camera}
+  /api/events:
+    get:
+      summary: Browse recent persisted analytics events
+      parameters:
+        - {in: query, name: q, schema: {type: string}}
+        - {in: query, name: camera_id, schema: {type: string}}
+        - {in: query, name: limit, schema: {type: integer, minimum: 1, maximum: 1000, default: 200}}
+      responses:
+        '200': {description: Event rows with camera and watchlist metadata}
+        '400': {description: Invalid limit}
+    post:
+      summary: Ingest ANPR event and correlate watchlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/DetectionInput'}
+      responses:
+        '201': {description: Event persisted and alert created if matched}
+        '400': {description: Validation error}
+        '404': {description: Unknown camera}
+        '409': {description: Duplicate source_id}
+  /api/entities:
+    get:
+      summary: List all distinct vehicles present in stored detections
+      parameters:
+        - {in: query, name: q, schema: {type: string}, description: Optional partial plate filter}
+      responses:
+        '200': {description: Vehicle list with detection count, first/last seen and latest camera}
+  /api/entities/search:
+    get:
+      summary: Search entity sightings in chronological order
+      parameters:
+        - {in: query, name: q, required: true, schema: {type: string}}
+        - {in: query, name: exact, schema: {type: boolean, default: false}}
+      responses:
+        '200': {description: Matching detection events and camera coordinates}
+  /api/alerts:
+    get:
+      summary: List alerts
+      responses:
+        '200': {description: Alert records}
+  /api/alerts/{alert_id}:
+    patch:
+      summary: Acknowledge or resolve an alert
+      parameters:
+        - {in: path, name: alert_id, required: true, schema: {type: integer}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: {type: string, enum: [Acknowledged, Resolved]}
+      responses:
+        '200': {description: Alert updated}
+        '404': {description: Unknown alert}
+  /api/watchlist:
+    get:
+      summary: List watchlist entries
+      responses:
+        '200': {description: Watchlist records}
+    post:
+      summary: Add a watchlist identifier (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identifier]
+              properties:
+                identifier: {type: string, maxLength: 32}
+                entity_type: {type: string, enum: [Vehicle, Person]}
+                reason: {type: string}
+                priority: {type: string, enum: [High, Medium, Low]}
+      responses:
+        '201': {description: Watchlist entry created}
+        '409': {description: Identifier already exists}
+  /api/watchlist/{id}:
+    patch:
+      summary: Enable or disable a watchlist identifier (admin)
+      parameters:
+        - {in: path, name: id, required: true, schema: {type: integer}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [active]
+              properties:
+                active: {type: boolean}
+      responses:
+        '200': {description: Updated entry}
+  /api/events/stream:
+    get:
+      summary: Authenticated server-sent event stream
+      description: SSE message JSON has type detection, alert, camera, or watchlist and a data field.
+      responses:
+        '200': {description: text/event-stream}
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Signed demo token
+  schemas:
+    CameraInput:
+      type: object
+      required: [id, name, department, latitude, longitude, camera_type, protocol, endpoint_ref, zone]
+      properties:
+        id: {type: string, example: C005}
+        name: {type: string}
+        department: {type: string}
+        latitude: {type: number, minimum: -90, maximum: 90}
+        longitude: {type: number, minimum: -180, maximum: 180}
+        camera_type: {type: string}
+        protocol: {type: string, example: SIMULATOR}
+        endpoint_ref: {type: string, description: Non-secret source reference}
+        zone: {type: string}
+        storage: {type: string}
+    DetectionInput:
+      type: object
+      required: [camera_id, vehicle_number, confidence, vehicle_type, event_type, source_id]
+      properties:
+        camera_id: {type: string}
+        timestamp: {type: string, format: date-time}
+        vehicle_number: {type: string, maxLength: 24}
+        confidence: {type: number, minimum: 0, maximum: 1}
+        vehicle_type: {type: string}
+        event_type: {type: string, example: ANPR}
+        bounding_box: {type: object, additionalProperties: true}
+        source_id: {type: string, maxLength: 120}
