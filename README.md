@@ -109,25 +109,25 @@ The feed panels render local synthetic scenes in canvas; they do not connect to 
 
 Except `POST /api/login` and `GET /api/health`, endpoints require `Authorization: Bearer <token>`. JSON request and response bodies are used. Login tokens last eight hours.
 
-| Method | Path | Purpose |
-| --- | --- | --- |
-| `GET` | `/api/health` | Liveness and demo mode |
-| `POST` | `/api/login` | Authenticate `admin` or `operator` |
-| `GET` | `/api/bootstrap` | Dashboard's cameras, events, alerts, watchlist and audit snapshot |
-| `GET` | `/api/cameras?q=&status=` | Search/filter registry |
-| `POST` | `/api/cameras` | Add camera (admin) |
-| `PATCH` | `/api/cameras/{camera_id}` | Edit camera (admin) |
-| `POST` | `/api/cameras/{camera_id}/heartbeat` | Update camera health and heartbeat timestamp |
-| `POST` | `/api/events` | Ingest an ANPR analytics event, correlate watchlist, and create alert if matched |
-| `GET` | `/api/entities` | List all distinct detected vehicles, with counts and last-seen metadata |
-| `GET` | `/api/entities/search?q={identifier}&exact=true` | Return all exact-plate sightings, oldest first; omit `exact=true` for partial search |
-| `GET` | `/api/events?q=&camera_id=&limit=` | Browse persisted event history (up to 1,000 rows per request) |
-| `GET` | `/api/alerts` | List alerts |
-| `PATCH` | `/api/alerts/{alert_id}` | Set status to `Acknowledged` or `Resolved` |
-| `GET` | `/api/watchlist` | List watchlist |
-| `POST` | `/api/watchlist` | Add identifier (admin) |
-| `PATCH` | `/api/watchlist/{id}` | Set `active: true/false` (admin) |
-| `GET` | `/api/events/stream` | Authenticated SSE updates |
+| Method  | Path                                             | Purpose                                                                              |
+| ------- | ------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| `GET`   | `/api/health`                                    | Liveness and demo mode                                                               |
+| `POST`  | `/api/login`                                     | Authenticate `admin` or `operator`                                                   |
+| `GET`   | `/api/bootstrap`                                 | Dashboard's cameras, events, alerts, watchlist and audit snapshot                    |
+| `GET`   | `/api/cameras?q=&status=`                        | Search/filter registry                                                               |
+| `POST`  | `/api/cameras`                                   | Add camera (admin)                                                                   |
+| `PATCH` | `/api/cameras/{camera_id}`                       | Edit camera (admin)                                                                  |
+| `POST`  | `/api/cameras/{camera_id}/heartbeat`             | Update camera health and heartbeat timestamp                                         |
+| `POST`  | `/api/events`                                    | Ingest an ANPR analytics event, correlate watchlist, and create alert if matched     |
+| `GET`   | `/api/entities`                                  | List all distinct detected vehicles, with counts and last-seen metadata              |
+| `GET`   | `/api/entities/search?q={identifier}&exact=true` | Return all exact-plate sightings, oldest first; omit `exact=true` for partial search |
+| `GET`   | `/api/events?q=&camera_id=&limit=`               | Browse persisted event history (up to 1,000 rows per request)                        |
+| `GET`   | `/api/alerts`                                    | List alerts                                                                          |
+| `PATCH` | `/api/alerts/{alert_id}`                         | Set status to `Acknowledged` or `Resolved`                                           |
+| `GET`   | `/api/watchlist`                                 | List watchlist                                                                       |
+| `POST`  | `/api/watchlist`                                 | Add identifier (admin)                                                               |
+| `PATCH` | `/api/watchlist/{id}`                            | Set `active: true/false` (admin)                                                     |
+| `GET`   | `/api/events/stream`                             | Authenticated SSE updates                                                            |
 
 Example event:
 
@@ -139,7 +139,7 @@ Example event:
   "confidence": 0.96,
   "vehicle_type": "Car",
   "event_type": "ANPR",
-  "bounding_box": {"x": 0.34, "y": 0.46, "width": 0.2, "height": 0.14},
+  "bounding_box": { "x": 0.34, "y": 0.46, "width": 0.2, "height": 0.14 },
   "source_id": "anpr-worker-01-frame-0000123"
 }
 ```
@@ -198,15 +198,15 @@ erDiagram
 
 ## Configuration
 
-| Variable | Default | Notes |
-| --- | --- | --- |
-| `HOST` | `127.0.0.1` | Bind address. Keep localhost unless intentionally exposing the demo. |
-| `PORT` | `8000` | HTTP port. |
-| `OKDRIVER_DB` | `./data/okdriver.sqlite3` | SQLite file location. |
-| `OKDRIVER_ADMIN_PASSWORD` | Required in `.env` | Unique local admin password (12+ characters). |
-| `OKDRIVER_OPERATOR_PASSWORD` | Required in `.env` | Unique local operator password (12+ characters). |
-| `OKDRIVER_TOKEN_KEY` | Required in `.env` | Long random signing key. |
-| `OKDRIVER_DEMO_MODE` | `true` | Liveness response indicator. |
+| Variable                     | Default                   | Notes                                                                |
+| ---------------------------- | ------------------------- | -------------------------------------------------------------------- |
+| `HOST`                       | `127.0.0.1`               | Bind address. Keep localhost unless intentionally exposing the demo. |
+| `PORT`                       | `8000`                    | HTTP port.                                                           |
+| `OKDRIVER_DB`                | `./data/okdriver.sqlite3` | SQLite file location.                                                |
+| `OKDRIVER_ADMIN_PASSWORD`    | Required in `.env`        | Unique local admin password (12+ characters).                        |
+| `OKDRIVER_OPERATOR_PASSWORD` | Required in `.env`        | Unique local operator password (12+ characters).                     |
+| `OKDRIVER_TOKEN_KEY`         | Required in `.env`        | Long random signing key.                                             |
+| `OKDRIVER_DEMO_MODE`         | `true`                    | Liveness response indicator.                                         |
 
 `SIMULATOR` sources refresh their heartbeat every 15 seconds. Non-simulator sources transition to Offline when the last heartbeat is over 90 seconds old. A source integration should call its heartbeat endpoint at an interval shorter than the timeout.
 

@@ -1,89 +1,1680 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import { Activity, AlertTriangle, Bell, Camera, CarFront, ChevronDown, CircleHelp, Command, Eye, FileClock, LayoutDashboard, LogOut, MapPinned, Plus, Search, Shield, ShieldCheck, SlidersHorizontal, Users, Video, X } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Polyline,
+  Popup,
+  useMap,
+} from "react-leaflet";
+import L from "leaflet";
+import {
+  Activity,
+  AlertTriangle,
+  Bell,
+  Camera,
+  CarFront,
+  ChevronDown,
+  CircleHelp,
+  Command,
+  Eye,
+  FileClock,
+  LayoutDashboard,
+  LogOut,
+  MapPinned,
+  Plus,
+  Search,
+  Shield,
+  ShieldCheck,
+  SlidersHorizontal,
+  Users,
+  Video,
+  X,
+} from "lucide-react";
 
 const centers = [
-  { id: 'all', name:'All Command Centers', state: 'Multi-state', coords: [23.5,72] }, { id: 'ahmedabad', name:'Ahmedabad', state: 'Gujarat', coords: [23.0225,72.5714] }, { id: 'surat', name:'Surat', state: 'Gujarat', coords: [21.1702,72.8311] },
-  { id: 'vadodara', name:'Vadodara', state: 'Gujarat', coords: [22.3072,73.1812] }, { id: 'rajkot', name:'Rajkot', state: 'Gujarat', coords: [22.3039,70.8022] },
-  { id: 'gandhinagar', name:'Gandhinagar', state: 'Gujarat', coords: [23.2156,72.6369] }, { id: 'jaipur', name:'Jaipur', state: 'Rajasthan', coords: [26.9124,75.7873] },
-  { id: 'mumbai', name:'Mumbai', state: 'Maharashtra', coords: [19.076,72.8777] }, { id: 'bhopal', name:'Bhopal', state: 'Madhya Pradesh', coords: [23.2599,77.4126] },
+  {
+    id: "all",
+    name: "All Command Centers",
+    state: "Multi-state",
+    coords: [23.5, 72],
+  },
+  {
+    id: "ahmedabad",
+    name: "Ahmedabad",
+    state: "Gujarat",
+    coords: [23.0225, 72.5714],
+  },
+  { id: "surat", name: "Surat", state: "Gujarat", coords: [21.1702, 72.8311] },
+  {
+    id: "vadodara",
+    name: "Vadodara",
+    state: "Gujarat",
+    coords: [22.3072, 73.1812],
+  },
+  {
+    id: "rajkot",
+    name: "Rajkot",
+    state: "Gujarat",
+    coords: [22.3039, 70.8022],
+  },
+  {
+    id: "gandhinagar",
+    name: "Gandhinagar",
+    state: "Gujarat",
+    coords: [23.2156, 72.6369],
+  },
+  {
+    id: "jaipur",
+    name: "Jaipur",
+    state: "Rajasthan",
+    coords: [26.9124, 75.7873],
+  },
+  {
+    id: "mumbai",
+    name: "Mumbai",
+    state: "Maharashtra",
+    coords: [19.076, 72.8777],
+  },
+  {
+    id: "bhopal",
+    name: "Bhopal",
+    state: "Madhya Pradesh",
+    coords: [23.2599, 77.4126],
+  },
 ];
 const nav = [
-  ['Overview', LayoutDashboard], ['Camera Registry', Camera], ['Detection History', Eye], ['Vehicle Tracking', MapPinned],
-  ['Alert Center', Bell], ['Watchlist', Shield], ['Audit Log', FileClock],
+  ["Overview", LayoutDashboard],
+  ["Camera Registry", Camera],
+  ["Detection History", Eye],
+  ["Vehicle Tracking", MapPinned],
+  ["Alert Center", Bell],
+  ["Watchlist", Shield],
+  ["Audit Log", FileClock],
 ];
-const cx = (...s) => s.filter(Boolean).join(' ');
-const fmt = (s) => s ? new Date(s).toLocaleString() : '—';
-const vehicleOf = (r) => r.vehicle_number || r.identifier || 'Unknown';
+const cx = (...s) => s.filter(Boolean).join(" ");
+const fmt = (s) => (s ? new Date(s).toLocaleString() : "—");
+const vehicleOf = (r) => r.vehicle_number || r.identifier || "Unknown";
 
-function Badge({ children, color = 'slate' }) { return <span className={`badge badge-${color}`}>{children}</span>; }
-function Button({ children, onClick, kind = 'primary', disabled = false, className = '', type = 'button' }) { return <button type={type} disabled={disabled} onClick={onClick} className={cx('btn transition-all duration-150 hover:-translate-y-px', `btn-${kind}`, className)}>{children}</button>; }
-function Metric({ icon: Icon, label, value, note, tone = 'blue' }) { return <article className="metric card flex items-center gap-4"><div className={`metric-icon ${tone}`}><Icon size={20}/></div><div><div className="muted small">{label}</div><strong>{value}</strong><div className="muted tiny">{note}</div></div></article>; }
-function Header({ title, sub, right }) { return <div className="page-header flex items-center justify-between gap-5"><div><h1>{title}</h1><p className="muted">{sub}</p></div>{right}</div>; }
-function Table({ columns, rows, empty = 'No records found.' }) { return <div className="table-wrap overflow-x-auto"><table><thead><tr>{columns.map(c => <th key={c.label}>{c.label}</th>)}</tr></thead><tbody>{rows.length ? rows.map((r,i)=><tr key={r.id ?? i}>{columns.map(c=><td key={c.label}>{c.render ? c.render(r,i) : r[c.key] ?? '—'}</td>)}</tr>) : <tr><td className="empty" colSpan={columns.length}>{empty}</td></tr>}</tbody></table></div>; }
-function CameraScene({status}) { return <div className="camera-thumb"><div className="sim-scene"><span className="sim-road"/><span className="sim-car car-one"/><span className="sim-car car-two"/><span className="sim-scan"/></div><Badge color={status==='Online'?'green':status==='Degraded'?'amber':'red'}>{status}</Badge></div>; }
+function Badge({ children, color = "slate" }) {
+  return <span className={`badge badge-${color}`}>{children}</span>;
+}
+function Button({
+  children,
+  onClick,
+  kind = "primary",
+  disabled = false,
+  className = "",
+  type = "button",
+}) {
+  return (
+    <button
+      type={type}
+      disabled={disabled}
+      onClick={onClick}
+      className={cx(
+        "btn transition-all duration-150 hover:-translate-y-px",
+        `btn-${kind}`,
+        className,
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+function Metric({ icon: Icon, label, value, note, tone = "blue" }) {
+  return (
+    <article className="metric card flex items-center gap-4">
+      <div className={`metric-icon ${tone}`}>
+        <Icon size={20} />
+      </div>
+      <div>
+        <div className="muted small">{label}</div>
+        <strong>{value}</strong>
+        <div className="muted tiny">{note}</div>
+      </div>
+    </article>
+  );
+}
+function Header({ title, sub, right }) {
+  return (
+    <div className="page-header flex items-center justify-between gap-5">
+      <div>
+        <h1>{title}</h1>
+        <p className="muted">{sub}</p>
+      </div>
+      {right}
+    </div>
+  );
+}
+function Table({ columns, rows, empty = "No records found." }) {
+  return (
+    <div className="table-wrap overflow-x-auto">
+      <table>
+        <thead>
+          <tr>
+            {columns.map((c) => (
+              <th key={c.label}>{c.label}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length ? (
+            rows.map((r, i) => (
+              <tr key={r.id ?? i}>
+                {columns.map((c) => (
+                  <td key={c.label}>
+                    {c.render ? c.render(r, i) : (r[c.key] ?? "—")}
+                  </td>
+                ))}
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td className="empty" colSpan={columns.length}>
+                {empty}
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+function CameraScene({ status }) {
+  return (
+    <div className="camera-thumb">
+      <div className="sim-scene">
+        <span className="sim-road" />
+        <span className="sim-car car-one" />
+        <span className="sim-car car-two" />
+        <span className="sim-scan" />
+      </div>
+      <Badge
+        color={
+          status === "Online"
+            ? "green"
+            : status === "Degraded"
+              ? "amber"
+              : "red"
+        }
+      >
+        {status}
+      </Badge>
+    </div>
+  );
+}
 
 function TraceMap({ events, center }) {
   const map = useMap();
-  useEffect(() => { const pts = events.filter(e=>Number.isFinite(+e.latitude)&&Number.isFinite(+e.longitude)); if (pts.length) map.fitBounds(pts.map(e=>[+e.latitude,+e.longitude]), {padding:[36,36], maxZoom:14}); else map.setView(center,11); }, [events, center, map]);
+  useEffect(() => {
+    const pts = events.filter(
+      (e) => Number.isFinite(+e.latitude) && Number.isFinite(+e.longitude),
+    );
+    if (pts.length)
+      map.fitBounds(
+        pts.map((e) => [+e.latitude, +e.longitude]),
+        { padding: [36, 36], maxZoom: 14 },
+      );
+    else map.setView(center, 11);
+  }, [events, center, map]);
   return null;
 }
 function TrackingMap({ events, center }) {
-  const points = events.filter(e=>Number.isFinite(+e.latitude)&&Number.isFinite(+e.longitude));
-  const iconFor = (n) => L.divIcon({className:'numbered-pin',html:`<span>${n}</span>`,iconSize:[32,32],iconAnchor:[16,16]});
-  return <div id="trace-map" className="map-shell"><MapContainer center={center} zoom={11} scrollWheelZoom className="map"><TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/><TraceMap events={points} center={center}/>{points.length>1&&<Polyline positions={points.map(e=>[+e.latitude,+e.longitude])} pathOptions={{color:'#2563eb',weight:4,opacity:.75}}/>}{points.map((e,i)=><Marker key={e.id||i} position={[+e.latitude,+e.longitude]} icon={iconFor(i+1)}><Popup><b>Sighting {i+1}</b><br/>{vehicleOf(e)}<br/>{e.camera_name} · {fmt(e.timestamp)}</Popup></Marker>)}</MapContainer></div>;
+  const points = events.filter(
+    (e) => Number.isFinite(+e.latitude) && Number.isFinite(+e.longitude),
+  );
+  const iconFor = (n) =>
+    L.divIcon({
+      className: "numbered-pin",
+      html: `<span>${n}</span>`,
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+    });
+  return (
+    <div id="trace-map" className="map-shell">
+      <MapContainer center={center} zoom={11} scrollWheelZoom className="map">
+        <TileLayer
+          attribution="&copy; OpenStreetMap"
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <TraceMap events={points} center={center} />
+        {points.length > 1 && (
+          <Polyline
+            positions={points.map((e) => [+e.latitude, +e.longitude])}
+            pathOptions={{ color: "#2563eb", weight: 4, opacity: 0.75 }}
+          />
+        )}
+        {points.map((e, i) => (
+          <Marker
+            key={e.id || i}
+            position={[+e.latitude, +e.longitude]}
+            icon={iconFor(i + 1)}
+          >
+            <Popup>
+              <b>Sighting {i + 1}</b>
+              <br />
+              {vehicleOf(e)}
+              <br />
+              {e.camera_name} · {fmt(e.timestamp)}
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+    </div>
+  );
 }
 
 function App() {
-  const [token,setToken]=useState(''); const [user,setUser]=useState(null); const [page,setPage]=useState('Overview');
-  const [center,setCenter]=useState(centers[0]); const [allowedCenters,setAllowedCenters]=useState([centers[0]]); const [data,setData]=useState({cameras:[],detections:[],alerts:[],watchlist:[],audit:[]});
-  const [loading,setLoading]=useState(false); const [error,setError]=useState(''); const [toast,setToast]=useState('');
-  const [traceQuery,setTraceQuery]=useState(''); const [entityQuery,setEntityQuery]=useState(''); const [entities,setEntities]=useState([]); const [traceEvents,setTraceEvents]=useState([]);
-  const [alertQuery,setAlertQuery]=useState(''); const [alertStatus,setAlertStatus]=useState('All statuses'); const [selectedVehicle,setSelectedVehicle]=useState('');
-  const [alertVehicleState,setAlertVehicleState]=useState('Active'); const [watchlistFilter,setWatchlistFilter]=useState('Active');
-  const [showIdentifier,setShowIdentifier]=useState(false); const [identifier,setIdentifier]=useState({identifier:'',entity_type:'Vehicle',reason:'',priority:'Medium'});
-  const [showCamera,setShowCamera]=useState(false); const [cameraDraft,setCameraDraft]=useState({id:'',name:'',department:'Traffic Control',latitude:'',longitude:'',camera_type:'Traffic',protocol:'SIMULATOR',endpoint_ref:'sim://new-camera',zone:'Central Zone'});
-  const [login,setLogin]=useState({username:'',password:''}); const mapAnchor=useRef(null);
-  const selectedCenter=center||centers[0];
-  const api=async(path,options={})=>{const response=await fetch(path,{...options,headers:{'Content-Type':'application/json','X-Command-Center-ID':center.id,...(token?{Authorization:`Bearer ${token}`}:{}) ,...(options.headers||{})}});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(body.error||`Request failed (${response.status})`);return body;};
-  const load=async(auth=token)=>{if(!auth)return;setLoading(true);try{const response=await fetch('/api/bootstrap',{headers:{Authorization:`Bearer ${auth}`,'X-Command-Center-ID':center.id}});const body=await response.json();if(!response.ok)throw new Error(body.error||'Could not load dashboard');setData({cameras:body.cameras||[],detections:body.detections||[],alerts:body.alerts||[],watchlist:body.watchlist||[],audit:body.audit||[]});setError('');}catch(e){setError(e.message);}finally{setLoading(false);}};
-  useEffect(()=>{if(token)load();},[token,center]);
-  useEffect(()=>{if(!token)return;let active=true;const controller=new AbortController();const connect=async()=>{try{const response=await fetch('/api/events/stream',{headers:{Authorization:`Bearer ${token}`,'X-Command-Center-ID':center.id},signal:controller.signal});if(!response.ok||!response.body)throw new Error('Live updates disconnected');const reader=response.body.getReader();const decoder=new TextDecoder();let buffer='';while(active){const {value,done}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const chunks=buffer.split(/\r?\n\r?\n/);buffer=chunks.pop()||'';for(const chunk of chunks){const line=chunk.split(/\r?\n/).find(row=>row.startsWith('data: '));if(!line)continue;const message=JSON.parse(line.slice(6));if(['camera','detection','alert','watchlist'].includes(message.type))void load(token);}}}catch(error){if(active&&error.name!=='AbortError'){await new Promise(resolve=>setTimeout(resolve,1500));if(active)void connect();}}};void connect();return()=>{active=false;controller.abort();};},[token,center.id]);
-  useEffect(()=>{if(!toast)return;const id=setTimeout(()=>setToast(''),3200);return()=>clearTimeout(id);},[toast]);
-  useEffect(()=>{window.scrollTo({top:0,behavior:'smooth'});},[page]);
-  useEffect(()=>{if(page==='Vehicle Tracking'&&traceQuery){const t=setTimeout(()=>mapAnchor.current?.scrollIntoView({behavior:'smooth',block:'center'}),220);return()=>clearTimeout(t);}},[page,traceQuery,traceEvents]);
-  const doLogin=async(e)=>{e.preventDefault();setError('');let response;try{response=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(login)});}catch{setError('Service is offline. Start the server and try again.');return;}let body={};try{body=await response.json();}catch{}if(response.status===401){setError('Wrong username or password. Please try again.');return;}if(!response.ok){setError([502,503,504].includes(response.status)?'Service is offline. Start the server and try again.':'Unable to sign in right now. Please try again.');return;}const allowed=(body.command_centers||[]).map(c=>centers.find(x=>x.id===c.id)||{id:c.id,name:c.name,state:c.state,coords:[c.latitude,c.longitude]});setAllowedCenters(allowed.length?allowed:[centers[0]]);setCenter(allowed[0]||centers[0]);setUser({username:body.user,role:body.role});setToken(body.token);setPage('Overview');setSelectedVehicle('');setAlertQuery('');setTraceQuery('');setEntities([]);setTraceEvents([]);};
-  const signOut=()=>{setToken('');setUser(null);setData({cameras:[],detections:[],alerts:[],watchlist:[],audit:[]});setEntities([]);setEntityQuery('');setTraceEvents([]);setSelectedVehicle('');setAlertQuery('');setAlertStatus('All statuses');setTraceQuery('');setError('');setToast('');setShowIdentifier(false);setShowCamera(false);setPage('Overview');setCenter(centers[0]);};
-  const showTrace=async(vehicle)=>{const plate=vehicleOf({vehicle_number:vehicle}).toUpperCase();setTraceQuery(plate);setEntityQuery(plate);setPage('Vehicle Tracking');try{const r=await api(`/api/entities/search?q=${encodeURIComponent(plate)}&exact=true`);setTraceEvents(r.events||[]);setEntities([{vehicle_number:plate,detection_count:r.events?.length||0}]);}catch(e){setTraceEvents([]);setError(e.message);}};
-  const searchEntities=async(q=entityQuery)=>{setEntityQuery(q);if(!q.trim()){setEntities([]);return;}try{const r=await api(`/api/entities?q=${encodeURIComponent(q)}`);setEntities(r.items||[]);}catch(e){setError(e.message);}};
-  const traceSelected=async(v)=>{await showTrace(v);setTimeout(()=>mapAnchor.current?.scrollIntoView({behavior:'smooth',block:'center'}),300);};
-  const addIdentifier=async(e)=>{e.preventDefault();try{await api('/api/watchlist',{method:'POST',body:JSON.stringify(identifier)});setIdentifier({identifier:'',entity_type:'Vehicle',reason:'',priority:'Medium'});setShowIdentifier(false);setToast('Identifier added to watchlist');await load();}catch(err){setError(err.message);}};
-  const simulateDetection=async()=>{const availableCameras=data.cameras.filter(camera=>camera.status!=='Offline');if(!availableCameras.length){setError('There are no online cameras in this command center.');return;}const activeEntries=data.watchlist.filter(item=>item.active);const matching=activeEntries.length>0&&Math.random()<0.58;const watched=activeEntries[Math.floor(Math.random()*activeEntries.length)];const vehicle=matching?watched.identifier:`GJ${String(Math.floor(Math.random()*10)).padStart(2,'0')}XY${String(Math.floor(Math.random()*9000)+1000)}`;const camera=availableCameras[Math.floor(Math.random()*availableCameras.length)];try{const result=await api('/api/events',{method:'POST',body:JSON.stringify({camera_id:camera.id,timestamp:new Date().toISOString(),vehicle_number:vehicle,confidence:Number((0.88+Math.random()*0.11).toFixed(2)),vehicle_type:['Car','Motorcycle','Truck'][Math.floor(Math.random()*3)],event_type:'ANPR',bounding_box:{x:0.34,y:0.46,width:0.2,height:0.14},source_id:`demo-${crypto.randomUUID()}`})});await load();setToast(result.alert?`Watchlist match: ${vehicle} · alert created`:`Detection received: ${vehicle}`);}catch(error){setError(error.message);}};
-  const addCamera=async(e)=>{e.preventDefault();try{await api('/api/cameras',{method:'POST',body:JSON.stringify(cameraDraft)});setShowCamera(false);setCameraDraft({id:'',name:'',department:'Traffic Control',latitude:'',longitude:'',camera_type:'Traffic',protocol:'SIMULATOR',endpoint_ref:'sim://new-camera',zone:'Central Zone'});setToast('Camera registered');await load();}catch(err){setError(err.message);}};
-  const updateAlert=async(a,status)=>{try{await api(`/api/alerts/${a.id}`,{method:'PATCH',body:JSON.stringify({status})});await load();setToast(`Alert ${status.toLowerCase()}`);}catch(err){setError(err.message);}};
-  const toggleIdentifier=async(item)=>{try{await api(`/api/watchlist/${item.id}`,{method:'PATCH',body:JSON.stringify({active:!item.active})});await load();setToast(`${item.identifier} ${item.active?'disabled':'enabled'}`);}catch(err){setError(err.message);}};
-  const alerts=data.alerts||[]; const activeWatchlist=(data.watchlist||[]).filter(item=>item.active); const recent=useMemo(()=>{const groups=new Map();[...alerts].filter(a=>a.identifier_active!==0).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).forEach(a=>{const plate=vehicleOf(a);if(!groups.has(plate))groups.set(plate,{...a,alert_count:0});groups.get(plate).alert_count++;});return [...groups.values()].slice(0,4);},[alerts]);
-  const filteredAlerts=useMemo(()=>alerts.filter(a=>(!selectedVehicle||vehicleOf(a)===selectedVehicle)&&(!alertQuery||JSON.stringify(a).toLowerCase().includes(alertQuery.toLowerCase()))&&(alertStatus==='All statuses'||a.status===alertStatus)&&(alertVehicleState==='All vehicles'||(alertVehicleState==='Active'?a.identifier_active!==0:a.identifier_active===0))).sort((a,b)=>new Date(a.created_at)-new Date(b.created_at)),[alerts,selectedVehicle,alertQuery,alertStatus,alertVehicleState]);
-  const visibleWatchlist=(data.watchlist||[]).filter(item=>watchlistFilter==='All vehicles'||(watchlistFilter==='Active'?Boolean(item.active):!item.active));
-  const alertNumber=new Map();const numberedAlerts=filteredAlerts.map(a=>({...a,instance_no:(alertNumber.set(vehicleOf(a),(alertNumber.get(vehicleOf(a))||0)+1),alertNumber.get(vehicleOf(a)))}));
-  const online=data.cameras.filter(c=>c.status==='Online').length; const openAlerts=alerts.filter(a=>a.status==='Open'&&a.identifier_active!==0).length;
-  if(!token)return <div className="login-page"><div className="login-card"><div className="brand-mark"><Command size={22}/></div><p className="eyebrow">OKDRIVER · SENTINEL</p><h1>Command center sign in</h1><p className="muted">Sign in to view camera detections and vehicle alerts.</p><form onSubmit={doLogin} className="stack"><label>Username<input value={login.username} onChange={e=>setLogin({...login,username:e.target.value})} autoComplete="username"/></label><label>Password<input type="password" value={login.password} onChange={e=>setLogin({...login,password:e.target.value})} autoComplete="current-password"/></label>{error&&<div className="error-box">{error}</div>}<Button type="submit" className="full">Sign in</Button></form><div className="login-help">Local demo users: <b>admin</b> and <b>operator</b>. Set both passwords in your local <code>.env</code> file.</div></div></div>;
-  const selectedCenterAlerts=alerts;
-  const recentSection=<section className="section-card"><div className="section-title"><div><h2>Recent unique vehicle alerts</h2><p className="muted small">Latest four active watchlist vehicles; repeat detections are grouped.</p></div><Badge color="red">{recent.length} vehicles</Badge></div><div className="recent-grid">{recent.map((a,i)=><button className={cx('recent-alert',selectedVehicle===vehicleOf(a)&&'selected')} key={vehicleOf(a)} onClick={()=>{setSelectedVehicle(vehicleOf(a));setAlertQuery(vehicleOf(a));setAlertVehicleState('Active');setPage('Alert Center');}}><div className="recent-top"><span className="number-dot">{i+1}</span><Badge color={a.status==='Open'?'red':'amber'}>{a.status}</Badge></div><strong>{vehicleOf(a)}</strong><span className="muted small">{a.alert_count} alert instance{a.alert_count===1?'':'s'} · latest {fmt(a.created_at)}</span><span className="recent-cta">Open matching history →</span></button>)}{!recent.length&&<p className="muted">No active watchlist alerts yet.</p>}</div></section>;
+  const [token, setToken] = useState("");
+  const [user, setUser] = useState(null);
+  const [page, setPage] = useState("Overview");
+  const [center, setCenter] = useState(centers[0]);
+  const [allowedCenters, setAllowedCenters] = useState([centers[0]]);
+  const [data, setData] = useState({
+    cameras: [],
+    detections: [],
+    alerts: [],
+    watchlist: [],
+    audit: [],
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [toast, setToast] = useState("");
+  const [traceQuery, setTraceQuery] = useState("");
+  const [entityQuery, setEntityQuery] = useState("");
+  const [entities, setEntities] = useState([]);
+  const [traceEvents, setTraceEvents] = useState([]);
+  const [alertQuery, setAlertQuery] = useState("");
+  const [alertStatus, setAlertStatus] = useState("All statuses");
+  const [selectedVehicle, setSelectedVehicle] = useState("");
+  const [alertVehicleState, setAlertVehicleState] = useState("Active");
+  const [watchlistFilter, setWatchlistFilter] = useState("Active");
+  const [showIdentifier, setShowIdentifier] = useState(false);
+  const [identifier, setIdentifier] = useState({
+    identifier: "",
+    entity_type: "Vehicle",
+    reason: "",
+    priority: "Medium",
+  });
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraDraft, setCameraDraft] = useState({
+    id: "",
+    name: "",
+    department: "Traffic Control",
+    latitude: "",
+    longitude: "",
+    camera_type: "Traffic",
+    protocol: "SIMULATOR",
+    endpoint_ref: "sim://new-camera",
+    zone: "Central Zone",
+  });
+  const [login, setLogin] = useState({ username: "", password: "" });
+  const mapAnchor = useRef(null);
+  const selectedCenter = center || centers[0];
+  const api = async (path, options = {}) => {
+    const response = await fetch(path, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        "X-Command-Center-ID": center.id,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers || {}),
+      },
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok)
+      throw new Error(body.error || `Request failed (${response.status})`);
+    return body;
+  };
+  const load = async (auth = token) => {
+    if (!auth) return;
+    setLoading(true);
+    try {
+      const response = await fetch("/api/bootstrap", {
+        headers: {
+          Authorization: `Bearer ${auth}`,
+          "X-Command-Center-ID": center.id,
+        },
+      });
+      const body = await response.json();
+      if (!response.ok)
+        throw new Error(body.error || "Could not load dashboard");
+      setData({
+        cameras: body.cameras || [],
+        detections: body.detections || [],
+        alerts: body.alerts || [],
+        watchlist: body.watchlist || [],
+        audit: body.audit || [],
+      });
+      setError("");
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    if (token) load();
+  }, [token, center]);
+  useEffect(() => {
+    if (!token) return;
+    let active = true;
+    const controller = new AbortController();
+    const connect = async () => {
+      try {
+        const response = await fetch("/api/events/stream", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "X-Command-Center-ID": center.id,
+          },
+          signal: controller.signal,
+        });
+        if (!response.ok || !response.body)
+          throw new Error("Live updates disconnected");
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        while (active) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const chunks = buffer.split(/\r?\n\r?\n/);
+          buffer = chunks.pop() || "";
+          for (const chunk of chunks) {
+            const line = chunk
+              .split(/\r?\n/)
+              .find((row) => row.startsWith("data: "));
+            if (!line) continue;
+            const message = JSON.parse(line.slice(6));
+            if (
+              ["camera", "detection", "alert", "watchlist"].includes(
+                message.type,
+              )
+            )
+              void load(token);
+          }
+        }
+      } catch (error) {
+        if (active && error.name !== "AbortError") {
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          if (active) void connect();
+        }
+      }
+    };
+    void connect();
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [token, center.id]);
+  useEffect(() => {
+    if (!toast) return;
+    const id = setTimeout(() => setToast(""), 3200);
+    return () => clearTimeout(id);
+  }, [toast]);
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [page]);
+  useEffect(() => {
+    if (page === "Vehicle Tracking" && traceQuery) {
+      const t = setTimeout(
+        () =>
+          mapAnchor.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          }),
+        220,
+      );
+      return () => clearTimeout(t);
+    }
+  }, [page, traceQuery, traceEvents]);
+  const doLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    let response;
+    try {
+      response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(login),
+      });
+    } catch {
+      setError("Service is offline. Start the server and try again.");
+      return;
+    }
+    let body = {};
+    try {
+      body = await response.json();
+    } catch {}
+    if (response.status === 401) {
+      setError("Wrong username or password. Please try again.");
+      return;
+    }
+    if (!response.ok) {
+      setError(
+        [502, 503, 504].includes(response.status)
+          ? "Service is offline. Start the server and try again."
+          : "Unable to sign in right now. Please try again.",
+      );
+      return;
+    }
+    const allowed = (body.command_centers || []).map(
+      (c) =>
+        centers.find((x) => x.id === c.id) || {
+          id: c.id,
+          name: c.name,
+          state: c.state,
+          coords: [c.latitude, c.longitude],
+        },
+    );
+    setAllowedCenters(allowed.length ? allowed : [centers[0]]);
+    setCenter(allowed[0] || centers[0]);
+    setUser({ username: body.user, role: body.role });
+    setToken(body.token);
+    setPage("Overview");
+    setSelectedVehicle("");
+    setAlertQuery("");
+    setTraceQuery("");
+    setEntities([]);
+    setTraceEvents([]);
+  };
+  const signOut = () => {
+    setToken("");
+    setUser(null);
+    setData({
+      cameras: [],
+      detections: [],
+      alerts: [],
+      watchlist: [],
+      audit: [],
+    });
+    setEntities([]);
+    setEntityQuery("");
+    setTraceEvents([]);
+    setSelectedVehicle("");
+    setAlertQuery("");
+    setAlertStatus("All statuses");
+    setTraceQuery("");
+    setError("");
+    setToast("");
+    setShowIdentifier(false);
+    setShowCamera(false);
+    setPage("Overview");
+    setCenter(centers[0]);
+  };
+  const showTrace = async (vehicle) => {
+    const plate = vehicleOf({ vehicle_number: vehicle }).toUpperCase();
+    setTraceQuery(plate);
+    setEntityQuery(plate);
+    setPage("Vehicle Tracking");
+    try {
+      const r = await api(
+        `/api/entities/search?q=${encodeURIComponent(plate)}&exact=true`,
+      );
+      setTraceEvents(r.events || []);
+      setEntities([
+        { vehicle_number: plate, detection_count: r.events?.length || 0 },
+      ]);
+    } catch (e) {
+      setTraceEvents([]);
+      setError(e.message);
+    }
+  };
+  const searchEntities = async (q = entityQuery) => {
+    setEntityQuery(q);
+    if (!q.trim()) {
+      setEntities([]);
+      return;
+    }
+    try {
+      const r = await api(`/api/entities?q=${encodeURIComponent(q)}`);
+      setEntities(r.items || []);
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+  const traceSelected = async (v) => {
+    await showTrace(v);
+    setTimeout(
+      () =>
+        mapAnchor.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        }),
+      300,
+    );
+  };
+  const addIdentifier = async (e) => {
+    e.preventDefault();
+    try {
+      await api("/api/watchlist", {
+        method: "POST",
+        body: JSON.stringify(identifier),
+      });
+      setIdentifier({
+        identifier: "",
+        entity_type: "Vehicle",
+        reason: "",
+        priority: "Medium",
+      });
+      setShowIdentifier(false);
+      setToast("Identifier added to watchlist");
+      await load();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+  const simulateDetection = async () => {
+    const availableCameras = data.cameras.filter(
+      (camera) => camera.status !== "Offline",
+    );
+    if (!availableCameras.length) {
+      setError("There are no online cameras in this command center.");
+      return;
+    }
+    const activeEntries = data.watchlist.filter((item) => item.active);
+    const matching = activeEntries.length > 0 && Math.random() < 0.58;
+    const watched =
+      activeEntries[Math.floor(Math.random() * activeEntries.length)];
+    const vehicle = matching
+      ? watched.identifier
+      : `GJ${String(Math.floor(Math.random() * 10)).padStart(2, "0")}XY${String(Math.floor(Math.random() * 9000) + 1000)}`;
+    const camera =
+      availableCameras[Math.floor(Math.random() * availableCameras.length)];
+    try {
+      const result = await api("/api/events", {
+        method: "POST",
+        body: JSON.stringify({
+          camera_id: camera.id,
+          timestamp: new Date().toISOString(),
+          vehicle_number: vehicle,
+          confidence: Number((0.88 + Math.random() * 0.11).toFixed(2)),
+          vehicle_type: ["Car", "Motorcycle", "Truck"][
+            Math.floor(Math.random() * 3)
+          ],
+          event_type: "ANPR",
+          bounding_box: { x: 0.34, y: 0.46, width: 0.2, height: 0.14 },
+          source_id: `demo-${crypto.randomUUID()}`,
+        }),
+      });
+      await load();
+      setToast(
+        result.alert
+          ? `Watchlist match: ${vehicle} · alert created`
+          : `Detection received: ${vehicle}`,
+      );
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+  const addCamera = async (e) => {
+    e.preventDefault();
+    try {
+      await api("/api/cameras", {
+        method: "POST",
+        body: JSON.stringify(cameraDraft),
+      });
+      setShowCamera(false);
+      setCameraDraft({
+        id: "",
+        name: "",
+        department: "Traffic Control",
+        latitude: "",
+        longitude: "",
+        camera_type: "Traffic",
+        protocol: "SIMULATOR",
+        endpoint_ref: "sim://new-camera",
+        zone: "Central Zone",
+      });
+      setToast("Camera registered");
+      await load();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+  const updateAlert = async (a, status) => {
+    try {
+      await api(`/api/alerts/${a.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      });
+      await load();
+      setToast(`Alert ${status.toLowerCase()}`);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+  const toggleIdentifier = async (item) => {
+    try {
+      await api(`/api/watchlist/${item.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ active: !item.active }),
+      });
+      await load();
+      setToast(`${item.identifier} ${item.active ? "disabled" : "enabled"}`);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+  const alerts = data.alerts || [];
+  const activeWatchlist = (data.watchlist || []).filter((item) => item.active);
+  const recent = useMemo(() => {
+    const groups = new Map();
+    [...alerts]
+      .filter((a) => a.identifier_active !== 0)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .forEach((a) => {
+        const plate = vehicleOf(a);
+        if (!groups.has(plate)) groups.set(plate, { ...a, alert_count: 0 });
+        groups.get(plate).alert_count++;
+      });
+    return [...groups.values()].slice(0, 4);
+  }, [alerts]);
+  const filteredAlerts = useMemo(
+    () =>
+      alerts
+        .filter(
+          (a) =>
+            (!selectedVehicle || vehicleOf(a) === selectedVehicle) &&
+            (!alertQuery ||
+              JSON.stringify(a)
+                .toLowerCase()
+                .includes(alertQuery.toLowerCase())) &&
+            (alertStatus === "All statuses" || a.status === alertStatus) &&
+            (alertVehicleState === "All vehicles" ||
+              (alertVehicleState === "Active"
+                ? a.identifier_active !== 0
+                : a.identifier_active === 0)),
+        )
+        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at)),
+    [alerts, selectedVehicle, alertQuery, alertStatus, alertVehicleState],
+  );
+  const visibleWatchlist = (data.watchlist || []).filter(
+    (item) =>
+      watchlistFilter === "All vehicles" ||
+      (watchlistFilter === "Active" ? Boolean(item.active) : !item.active),
+  );
+  const alertNumber = new Map();
+  const numberedAlerts = filteredAlerts.map((a) => ({
+    ...a,
+    instance_no:
+      (alertNumber.set(vehicleOf(a), (alertNumber.get(vehicleOf(a)) || 0) + 1),
+      alertNumber.get(vehicleOf(a))),
+  }));
+  const online = data.cameras.filter((c) => c.status === "Online").length;
+  const openAlerts = alerts.filter(
+    (a) => a.status === "Open" && a.identifier_active !== 0,
+  ).length;
+  if (!token)
+    return (
+      <div className="login-page">
+        <div className="login-card">
+          <div className="brand-mark">
+            <Command size={22} />
+          </div>
+          <p className="eyebrow">OKDRIVER · SENTINEL</p>
+          <h1>Command center sign in</h1>
+          <p className="muted">
+            Sign in to view camera detections and vehicle alerts.
+          </p>
+          <form onSubmit={doLogin} className="stack">
+            <label>
+              Username
+              <input
+                value={login.username}
+                onChange={(e) =>
+                  setLogin({ ...login, username: e.target.value })
+                }
+                autoComplete="username"
+              />
+            </label>
+            <label>
+              Password
+              <input
+                type="password"
+                value={login.password}
+                onChange={(e) =>
+                  setLogin({ ...login, password: e.target.value })
+                }
+                autoComplete="current-password"
+              />
+            </label>
+            {error && <div className="error-box">{error}</div>}
+            <Button type="submit" className="full">
+              Sign in
+            </Button>
+          </form>
+          <div className="login-help">
+            Local demo users: <b>admin</b> and <b>operator</b>. Set both
+            passwords in your local <code>.env</code> file.
+          </div>
+        </div>
+      </div>
+    );
+  const selectedCenterAlerts = alerts;
+  const recentSection = (
+    <section className="section-card">
+      <div className="section-title">
+        <div>
+          <h2>Recent unique vehicle alerts</h2>
+          <p className="muted small">
+            Latest four active watchlist vehicles; repeat detections are
+            grouped.
+          </p>
+        </div>
+        <Badge color="red">{recent.length} vehicles</Badge>
+      </div>
+      <div className="recent-grid">
+        {recent.map((a, i) => (
+          <button
+            className={cx(
+              "recent-alert",
+              selectedVehicle === vehicleOf(a) && "selected",
+            )}
+            key={vehicleOf(a)}
+            onClick={() => {
+              setSelectedVehicle(vehicleOf(a));
+              setAlertQuery(vehicleOf(a));
+              setAlertVehicleState("Active");
+              setPage("Alert Center");
+            }}
+          >
+            <div className="recent-top">
+              <span className="number-dot">{i + 1}</span>
+              <Badge color={a.status === "Open" ? "red" : "amber"}>
+                {a.status}
+              </Badge>
+            </div>
+            <strong>{vehicleOf(a)}</strong>
+            <span className="muted small">
+              {a.alert_count} alert instance{a.alert_count === 1 ? "" : "s"} ·
+              latest {fmt(a.created_at)}
+            </span>
+            <span className="recent-cta">Open matching history →</span>
+          </button>
+        ))}
+        {!recent.length && (
+          <p className="muted">No active watchlist alerts yet.</p>
+        )}
+      </div>
+    </section>
+  );
   let content;
-  if(page==='Overview')content=<><Header title="Overview" sub={`Live monitoring summary for ${selectedCenter.name||selectedCenter.id} Command Center`} right={<div className="flex items-center gap-2"><Button kind="secondary" onClick={simulateDetection}><Activity size={16}/> Simulate detection</Button><Badge color="green"><Activity size={13}/> LIVE DEMO</Badge></div>}/><div className="metric-grid"><Metric icon={Video} label="Registered cameras" value={data.cameras.length} note={`${online} currently online`}/><Metric icon={Eye} label="Vehicle sightings" value={data.detections.length} note="Visible in this session" tone="violet"/><Metric icon={AlertTriangle} label="Open alerts" value={openAlerts} note="Require attention" tone="red"/><Metric icon={ShieldCheck} label="Watchlist identifiers" value={activeWatchlist.length} note="Active matching rules" tone="green"/></div>{recentSection}<div className="section-card"><div className="section-title"><div><h2>Camera network</h2><p className="muted small">Animated simulator previews · not live video</p></div><Button kind="secondary" onClick={()=>setPage('Camera Registry')}>View registry</Button></div><div className="camera-grid">{data.cameras.slice(0,6).map(c=><div className="camera-card" key={c.id}><CameraScene status={c.status}/><b>{c.name}</b><span className="muted small">{c.id} · {c.zone}</span></div>)}</div></div></>;
-  else if(page==='Camera Registry')content=<><Header title="Camera Registry" sub="Camera sources and current health" right={user?.role==='admin'&&<Button onClick={()=>setShowCamera(true)}><Plus size={16}/> Register camera</Button>}/><section className="section-card"><Table rows={data.cameras} columns={[{label:'Camera',render:r=><b>{r.name}</b>},{label:'ID',key:'id'},{label:'Command center',render:r=>centers.find(c=>c.id===r.command_center_id)?.name||r.command_center_id},{label:'Department',key:'department'},{label:'Zone',key:'zone'},{label:'Status',render:r=><Badge color={r.status==='Online'?'green':r.status==='Degraded'?'amber':'red'}>{r.status}</Badge>},{label:'Last heartbeat',render:r=>fmt(r.last_heartbeat)}]}/></section></>;
-  else if(page==='Detection History')content=<><Header title="Detection History" sub="Chronological vehicle sightings available to your profile"/><section className="section-card"><Table rows={[...data.detections].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp))} columns={[{label:'Vehicle',render:r=><b>{vehicleOf(r)}</b>},{label:'Seen at',render:r=>fmt(r.timestamp)},{label:'Camera',key:'camera_name'},{label:'Type',key:'vehicle_type'},{label:'Confidence',render:r=>`${Math.round((r.confidence||0)*100)}%`},{label:'Trace',render:r=><Button kind="secondary" onClick={()=>traceSelected(vehicleOf(r))}>Trace</Button>}]}/></section></>;
-  else if(page==='Vehicle Tracking')content=<><Header title="Vehicle Tracking" sub="Search the detected vehicle directory or trace a vehicle's ordered sightings"/><section className="section-card"><div className="search-row"><div className="search-box"><Search size={17}/><input placeholder="Search all detected vehicle numbers…" value={entityQuery} onChange={e=>searchEntities(e.target.value)} onKeyDown={e=>e.key==='Enter'&&searchEntities()}/></div><Button onClick={()=>searchEntities()}>Search vehicles</Button><div className="search-box trace-box"><MapPinned size={17}/><input placeholder="Exact vehicle number to trace" value={traceQuery} onChange={e=>setTraceQuery(e.target.value.toUpperCase())} onKeyDown={e=>e.key==='Enter'&&traceSelected(traceQuery)}/></div><Button kind="secondary" onClick={()=>traceSelected(traceQuery)} disabled={!traceQuery.trim()}>Trace route</Button></div><div className="entity-list">{entities.map(e=><button key={e.vehicle_number} className={cx('entity-item',traceQuery===e.vehicle_number&&'selected')} onClick={()=>traceSelected(e.vehicle_number)}><CarFront size={18}/><b>{e.vehicle_number}</b><span className="muted">{e.detection_count} sightings</span><span className="muted small">Last: {fmt(e.last_seen)}</span></button>)}</div></section><section ref={mapAnchor} className="section-card tracking-layout"><div className="section-title"><div><h2>{traceQuery?`Route for ${traceQuery}`:'Vehicle trace map'}</h2><p className="muted small">Numbered pins follow timestamp order, oldest first.</p></div>{traceQuery&&<Badge color="blue">{traceEvents.length} sighting{traceEvents.length===1?'':'s'}</Badge>}</div><TrackingMap events={traceEvents} center={selectedCenter.coords}/><div className="timeline">{traceEvents.map((e,i)=><article className="timeline-item" key={e.id||i}><span className="number-dot">{i+1}</span><div><b>{i===0?'First sighting':`${i+1}${['st','nd','rd'][i]||'th'} sighting`} · {vehicleOf(e)}</b><div className="muted small">{fmt(e.timestamp)} · {e.camera_name} · {Math.round((e.confidence||0)*100)}% confidence</div></div></article>)}{traceQuery&&!traceEvents.length&&<p className="muted">No sightings found for this exact vehicle number.</p>}</div></section></>;
-  else if(page==='Alert Center')content=<><Header title="Alert Center" sub="Recent unique vehicles stay separate from the full, filterable alert history" right={user?.role==='admin'&&<Button onClick={()=>setShowIdentifier(true)}><Plus size={16}/> Add identifier</Button>}/>{recentSection}<section className="section-card"><div className="section-title"><div><h2>Alert history</h2><p className="muted small">Status and text filters apply to this list only.</p></div><div className="filter-row"><div className="search-box"><Search size={16}/><input placeholder="Search vehicle, camera, reason…" value={alertQuery} onChange={e=>{setAlertQuery(e.target.value);if(!e.target.value)setSelectedVehicle('');}}/></div><select aria-label="Alert status" value={alertStatus} onChange={e=>setAlertStatus(e.target.value)}><option>All statuses</option><option>Open</option><option>Acknowledged</option><option>Resolved</option></select><select aria-label="Watchlist vehicle state" value={alertVehicleState} onChange={e=>setAlertVehicleState(e.target.value)}><option>Active</option><option>Inactive</option><option>All vehicles</option></select><Button kind="secondary" onClick={()=>{setSelectedVehicle('');setAlertQuery('');setAlertStatus('All statuses');setAlertVehicleState('Active');}}>Clear</Button></div></div>{selectedVehicle&&<div className="filter-notice">Showing only <b>{selectedVehicle}</b> · <button onClick={()=>{setSelectedVehicle('');setAlertQuery('');}}>Clear vehicle filter</button></div>}<Table rows={numberedAlerts} columns={[{label:'Instance',render:r=><span className="number-dot small-dot">{r.instance_no}</span>},{label:'Vehicle',render:r=><b>{vehicleOf(r)}</b>},{label:'Seen',render:r=>fmt(r.timestamp)},{label:'Camera',key:'camera_name'},{label:'Reason',key:'reason'},{label:'Priority',render:r=><Badge color={r.priority==='High'?'red':'amber'}>{r.priority}</Badge>},{label:'Status',render:r=><Badge color={r.status==='Open'?'red':r.status==='Resolved'?'green':'amber'}>{r.status}</Badge>},{label:'Actions',render:r=><div className="table-actions"><Button kind="secondary" onClick={()=>traceSelected(vehicleOf(r))}>Trace</Button>{r.status==='Open'&&<Button kind="secondary" onClick={()=>updateAlert(r,'Acknowledged')}>Acknowledge</Button>}{r.status!=='Resolved'&&<Button kind="secondary" onClick={()=>updateAlert(r,'Resolved')}>Resolve</Button>}</div>}]}/></section></>;
-  else if(page==='Watchlist')content=<><Header title="Watchlist" sub="Identifiers matched by incoming vehicle sightings" right={user?.role==='admin'&&<Button onClick={()=>setShowIdentifier(true)}><Plus size={16}/> Add identifier</Button>}/><section className="section-card"><div className="section-title"><div><h2>Vehicle identifiers</h2><p className="muted small">Inactive identifiers stay stored and can be shown with the filter.</p></div><div className="filter-row"><Badge color="green">{activeWatchlist.length} active</Badge><select aria-label="Watchlist vehicle state" value={watchlistFilter} onChange={e=>setWatchlistFilter(e.target.value)}><option>Active</option><option>Inactive</option><option>All vehicles</option></select></div></div><Table rows={visibleWatchlist} columns={[{label:'Identifier',render:r=><b>{r.identifier}</b>},{label:'Type',key:'entity_type'},{label:'Reason',key:'reason'},{label:'Priority',render:r=><Badge color={r.priority==='High'?'red':'amber'}>{r.priority}</Badge>},{label:'Status',render:r=><Badge color={r.active?'green':'slate'}>{r.active?'Active':'Inactive'}</Badge>},{label:'Added',render:r=>fmt(r.created_at)},...(user?.role==='admin'?[{label:'Action',render:r=><Button kind="secondary" onClick={()=>toggleIdentifier(r)}>{r.active?'Disable':'Enable'}</Button>}]:[])]}/></section></>;
-  else content=<><Header title="Audit Log" sub="Administrative audit activity visible to your role"/><section className="section-card"><Table rows={data.audit} columns={[{label:'Time',render:r=>fmt(r.timestamp)},{label:'Actor',key:'actor'},{label:'Action',render:r=><b>{r.action}</b>},{label:'Target',key:'target'},{label:'Details',render:r=>r.details}]}/></section></>;
+  if (page === "Overview")
+    content = (
+      <>
+        <Header
+          title="Overview"
+          sub={`Live monitoring summary for ${selectedCenter.name || selectedCenter.id} Command Center`}
+          right={
+            <div className="flex items-center gap-2">
+              <Button kind="secondary" onClick={simulateDetection}>
+                <Activity size={16} /> Simulate detection
+              </Button>
+              <Badge color="green">
+                <Activity size={13} /> LIVE DEMO
+              </Badge>
+            </div>
+          }
+        />
+        <div className="metric-grid">
+          <Metric
+            icon={Video}
+            label="Registered cameras"
+            value={data.cameras.length}
+            note={`${online} currently online`}
+          />
+          <Metric
+            icon={Eye}
+            label="Vehicle sightings"
+            value={data.detections.length}
+            note="Visible in this session"
+            tone="violet"
+          />
+          <Metric
+            icon={AlertTriangle}
+            label="Open alerts"
+            value={openAlerts}
+            note="Require attention"
+            tone="red"
+          />
+          <Metric
+            icon={ShieldCheck}
+            label="Watchlist identifiers"
+            value={activeWatchlist.length}
+            note="Active matching rules"
+            tone="green"
+          />
+        </div>
+        {recentSection}
+        <div className="section-card">
+          <div className="section-title">
+            <div>
+              <h2>Camera network</h2>
+              <p className="muted small">
+                Animated simulator previews · not live video
+              </p>
+            </div>
+            <Button kind="secondary" onClick={() => setPage("Camera Registry")}>
+              View registry
+            </Button>
+          </div>
+          <div className="camera-grid">
+            {data.cameras.slice(0, 6).map((c) => (
+              <div className="camera-card" key={c.id}>
+                <CameraScene status={c.status} />
+                <b>{c.name}</b>
+                <span className="muted small">
+                  {c.id} · {c.zone}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </>
+    );
+  else if (page === "Camera Registry")
+    content = (
+      <>
+        <Header
+          title="Camera Registry"
+          sub="Camera sources and current health"
+          right={
+            user?.role === "admin" && (
+              <Button onClick={() => setShowCamera(true)}>
+                <Plus size={16} /> Register camera
+              </Button>
+            )
+          }
+        />
+        <section className="section-card">
+          <Table
+            rows={data.cameras}
+            columns={[
+              { label: "Camera", render: (r) => <b>{r.name}</b> },
+              { label: "ID", key: "id" },
+              {
+                label: "Command center",
+                render: (r) =>
+                  centers.find((c) => c.id === r.command_center_id)?.name ||
+                  r.command_center_id,
+              },
+              { label: "Department", key: "department" },
+              { label: "Zone", key: "zone" },
+              {
+                label: "Status",
+                render: (r) => (
+                  <Badge
+                    color={
+                      r.status === "Online"
+                        ? "green"
+                        : r.status === "Degraded"
+                          ? "amber"
+                          : "red"
+                    }
+                  >
+                    {r.status}
+                  </Badge>
+                ),
+              },
+              { label: "Last heartbeat", render: (r) => fmt(r.last_heartbeat) },
+            ]}
+          />
+        </section>
+      </>
+    );
+  else if (page === "Detection History")
+    content = (
+      <>
+        <Header
+          title="Detection History"
+          sub="Chronological vehicle sightings available to your profile"
+        />
+        <section className="section-card">
+          <Table
+            rows={[...data.detections].sort(
+              (a, b) => new Date(b.timestamp) - new Date(a.timestamp),
+            )}
+            columns={[
+              { label: "Vehicle", render: (r) => <b>{vehicleOf(r)}</b> },
+              { label: "Seen at", render: (r) => fmt(r.timestamp) },
+              { label: "Camera", key: "camera_name" },
+              { label: "Type", key: "vehicle_type" },
+              {
+                label: "Confidence",
+                render: (r) => `${Math.round((r.confidence || 0) * 100)}%`,
+              },
+              {
+                label: "Trace",
+                render: (r) => (
+                  <Button
+                    kind="secondary"
+                    onClick={() => traceSelected(vehicleOf(r))}
+                  >
+                    Trace
+                  </Button>
+                ),
+              },
+            ]}
+          />
+        </section>
+      </>
+    );
+  else if (page === "Vehicle Tracking")
+    content = (
+      <>
+        <Header
+          title="Vehicle Tracking"
+          sub="Search the detected vehicle directory or trace a vehicle's ordered sightings"
+        />
+        <section className="section-card">
+          <div className="search-row">
+            <div className="search-box">
+              <Search size={17} />
+              <input
+                placeholder="Search all detected vehicle numbers…"
+                value={entityQuery}
+                onChange={(e) => searchEntities(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && searchEntities()}
+              />
+            </div>
+            <Button onClick={() => searchEntities()}>Search vehicles</Button>
+            <div className="search-box trace-box">
+              <MapPinned size={17} />
+              <input
+                placeholder="Exact vehicle number to trace"
+                value={traceQuery}
+                onChange={(e) => setTraceQuery(e.target.value.toUpperCase())}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && traceSelected(traceQuery)
+                }
+              />
+            </div>
+            <Button
+              kind="secondary"
+              onClick={() => traceSelected(traceQuery)}
+              disabled={!traceQuery.trim()}
+            >
+              Trace route
+            </Button>
+          </div>
+          <div className="entity-list">
+            {entities.map((e) => (
+              <button
+                key={e.vehicle_number}
+                className={cx(
+                  "entity-item",
+                  traceQuery === e.vehicle_number && "selected",
+                )}
+                onClick={() => traceSelected(e.vehicle_number)}
+              >
+                <CarFront size={18} />
+                <b>{e.vehicle_number}</b>
+                <span className="muted">{e.detection_count} sightings</span>
+                <span className="muted small">Last: {fmt(e.last_seen)}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+        <section ref={mapAnchor} className="section-card tracking-layout">
+          <div className="section-title">
+            <div>
+              <h2>
+                {traceQuery ? `Route for ${traceQuery}` : "Vehicle trace map"}
+              </h2>
+              <p className="muted small">
+                Numbered pins follow timestamp order, oldest first.
+              </p>
+            </div>
+            {traceQuery && (
+              <Badge color="blue">
+                {traceEvents.length} sighting
+                {traceEvents.length === 1 ? "" : "s"}
+              </Badge>
+            )}
+          </div>
+          <TrackingMap events={traceEvents} center={selectedCenter.coords} />
+          <div className="timeline">
+            {traceEvents.map((e, i) => (
+              <article className="timeline-item" key={e.id || i}>
+                <span className="number-dot">{i + 1}</span>
+                <div>
+                  <b>
+                    {i === 0
+                      ? "First sighting"
+                      : `${i + 1}${["st", "nd", "rd"][i] || "th"} sighting`}{" "}
+                    · {vehicleOf(e)}
+                  </b>
+                  <div className="muted small">
+                    {fmt(e.timestamp)} · {e.camera_name} ·{" "}
+                    {Math.round((e.confidence || 0) * 100)}% confidence
+                  </div>
+                </div>
+              </article>
+            ))}
+            {traceQuery && !traceEvents.length && (
+              <p className="muted">
+                No sightings found for this exact vehicle number.
+              </p>
+            )}
+          </div>
+        </section>
+      </>
+    );
+  else if (page === "Alert Center")
+    content = (
+      <>
+        <Header
+          title="Alert Center"
+          sub="Recent unique vehicles stay separate from the full, filterable alert history"
+          right={
+            user?.role === "admin" && (
+              <Button onClick={() => setShowIdentifier(true)}>
+                <Plus size={16} /> Add identifier
+              </Button>
+            )
+          }
+        />
+        {recentSection}
+        <section className="section-card">
+          <div className="section-title">
+            <div>
+              <h2>Alert history</h2>
+              <p className="muted small">
+                Status and text filters apply to this list only.
+              </p>
+            </div>
+            <div className="filter-row">
+              <div className="search-box">
+                <Search size={16} />
+                <input
+                  placeholder="Search vehicle, camera, reason…"
+                  value={alertQuery}
+                  onChange={(e) => {
+                    setAlertQuery(e.target.value);
+                    if (!e.target.value) setSelectedVehicle("");
+                  }}
+                />
+              </div>
+              <select
+                aria-label="Alert status"
+                value={alertStatus}
+                onChange={(e) => setAlertStatus(e.target.value)}
+              >
+                <option>All statuses</option>
+                <option>Open</option>
+                <option>Acknowledged</option>
+                <option>Resolved</option>
+              </select>
+              <select
+                aria-label="Watchlist vehicle state"
+                value={alertVehicleState}
+                onChange={(e) => setAlertVehicleState(e.target.value)}
+              >
+                <option>Active</option>
+                <option>Inactive</option>
+                <option>All vehicles</option>
+              </select>
+              <Button
+                kind="secondary"
+                onClick={() => {
+                  setSelectedVehicle("");
+                  setAlertQuery("");
+                  setAlertStatus("All statuses");
+                  setAlertVehicleState("Active");
+                }}
+              >
+                Clear
+              </Button>
+            </div>
+          </div>
+          {selectedVehicle && (
+            <div className="filter-notice">
+              Showing only <b>{selectedVehicle}</b> ·{" "}
+              <button
+                onClick={() => {
+                  setSelectedVehicle("");
+                  setAlertQuery("");
+                }}
+              >
+                Clear vehicle filter
+              </button>
+            </div>
+          )}
+          <Table
+            rows={numberedAlerts}
+            columns={[
+              {
+                label: "Instance",
+                render: (r) => (
+                  <span className="number-dot small-dot">{r.instance_no}</span>
+                ),
+              },
+              { label: "Vehicle", render: (r) => <b>{vehicleOf(r)}</b> },
+              { label: "Seen", render: (r) => fmt(r.timestamp) },
+              { label: "Camera", key: "camera_name" },
+              { label: "Reason", key: "reason" },
+              {
+                label: "Priority",
+                render: (r) => (
+                  <Badge color={r.priority === "High" ? "red" : "amber"}>
+                    {r.priority}
+                  </Badge>
+                ),
+              },
+              {
+                label: "Status",
+                render: (r) => (
+                  <Badge
+                    color={
+                      r.status === "Open"
+                        ? "red"
+                        : r.status === "Resolved"
+                          ? "green"
+                          : "amber"
+                    }
+                  >
+                    {r.status}
+                  </Badge>
+                ),
+              },
+              {
+                label: "Actions",
+                render: (r) => (
+                  <div className="table-actions">
+                    <Button
+                      kind="secondary"
+                      onClick={() => traceSelected(vehicleOf(r))}
+                    >
+                      Trace
+                    </Button>
+                    {r.status === "Open" && (
+                      <Button
+                        kind="secondary"
+                        onClick={() => updateAlert(r, "Acknowledged")}
+                      >
+                        Acknowledge
+                      </Button>
+                    )}
+                    {r.status !== "Resolved" && (
+                      <Button
+                        kind="secondary"
+                        onClick={() => updateAlert(r, "Resolved")}
+                      >
+                        Resolve
+                      </Button>
+                    )}
+                  </div>
+                ),
+              },
+            ]}
+          />
+        </section>
+      </>
+    );
+  else if (page === "Watchlist")
+    content = (
+      <>
+        <Header
+          title="Watchlist"
+          sub="Identifiers matched by incoming vehicle sightings"
+          right={
+            user?.role === "admin" && (
+              <Button onClick={() => setShowIdentifier(true)}>
+                <Plus size={16} /> Add identifier
+              </Button>
+            )
+          }
+        />
+        <section className="section-card">
+          <div className="section-title">
+            <div>
+              <h2>Vehicle identifiers</h2>
+              <p className="muted small">
+                Inactive identifiers stay stored and can be shown with the
+                filter.
+              </p>
+            </div>
+            <div className="filter-row">
+              <Badge color="green">{activeWatchlist.length} active</Badge>
+              <select
+                aria-label="Watchlist vehicle state"
+                value={watchlistFilter}
+                onChange={(e) => setWatchlistFilter(e.target.value)}
+              >
+                <option>Active</option>
+                <option>Inactive</option>
+                <option>All vehicles</option>
+              </select>
+            </div>
+          </div>
+          <Table
+            rows={visibleWatchlist}
+            columns={[
+              { label: "Identifier", render: (r) => <b>{r.identifier}</b> },
+              { label: "Type", key: "entity_type" },
+              { label: "Reason", key: "reason" },
+              {
+                label: "Priority",
+                render: (r) => (
+                  <Badge color={r.priority === "High" ? "red" : "amber"}>
+                    {r.priority}
+                  </Badge>
+                ),
+              },
+              {
+                label: "Status",
+                render: (r) => (
+                  <Badge color={r.active ? "green" : "slate"}>
+                    {r.active ? "Active" : "Inactive"}
+                  </Badge>
+                ),
+              },
+              { label: "Added", render: (r) => fmt(r.created_at) },
+              ...(user?.role === "admin"
+                ? [
+                    {
+                      label: "Action",
+                      render: (r) => (
+                        <Button
+                          kind="secondary"
+                          onClick={() => toggleIdentifier(r)}
+                        >
+                          {r.active ? "Disable" : "Enable"}
+                        </Button>
+                      ),
+                    },
+                  ]
+                : []),
+            ]}
+          />
+        </section>
+      </>
+    );
+  else
+    content = (
+      <>
+        <Header
+          title="Audit Log"
+          sub="Administrative audit activity visible to your role"
+        />
+        <section className="section-card">
+          <Table
+            rows={data.audit}
+            columns={[
+              { label: "Time", render: (r) => fmt(r.timestamp) },
+              { label: "Actor", key: "actor" },
+              { label: "Action", render: (r) => <b>{r.action}</b> },
+              { label: "Target", key: "target" },
+              { label: "Details", render: (r) => r.details },
+            ]}
+          />
+        </section>
+      </>
+    );
 
-  return <div className="app-shell"><aside className="sidebar"><div className="brand"><div className="brand-mark"><Command size={20}/></div><div><b>okDriver</b><span>SENTINEL · CONTROL</span></div></div><label className="center-label">COMMAND CENTER<select value={selectedCenter.id} onChange={e=>{setCenter(allowedCenters.find(c=>c.id===e.target.value)||centers[0]);setSelectedVehicle('');setAlertQuery('');setAlertStatus('All statuses');setTraceQuery('');setTraceEvents([]);setEntities([]);setEntityQuery('');setPage('Overview');}}>{centers.filter(c=>user?.role==='admin'||allowedCenters.some(a=>a.id===c.id)).map(c=><option key={c.id} value={c.id}>{c.id} · {c.state}</option>)}</select></label><div className="nav-label">WORKSPACE</div><nav>{nav.map(([label,Icon])=><button key={label} className={cx('nav-item',page===label&&'active')} onClick={()=>setPage(label)}><Icon size={18}/><span>{label}</span>{label==='Alert Center'&&openAlerts>0&&<i>{openAlerts}</i>}</button>)}</nav><div className="sidebar-spacer"/><div className="role-card"><div className="role-avatar">{user?.role==='admin'?<ShieldCheck size={18}/>:<Users size={18}/>}</div><div><b>{user?.username}</b><span>{user?.role==='admin'?'Administrator':'Command Operator'}</span></div><button title="Role permissions" onClick={()=>setToast(user?.role==='admin'?'Admin: see all command centers and audit activity; manage watchlist identifiers and camera records.':'Operator: work within the assigned command center, review/trace detections, update alerts, and see own/admin audit activity.')}><CircleHelp size={16}/></button></div><button className="logout" onClick={signOut}><LogOut size={17}/> Sign out</button></aside><main className="main"><div className="topbar"><div className="crumb"><span>Sentinel</span><span>/</span><b>{page}</b></div><div className="top-actions"><span className="state-pill"><span/> Data scoped to {selectedCenter.name||selectedCenter.id}</span><button className="icon-button" title="Refresh" onClick={()=>load()}><Activity size={18}/></button><button className="profile" onClick={signOut}>{user?.username?.slice(0,1).toUpperCase()}</button></div></div><div className="content">{error&&<div className="error-banner"><AlertTriangle size={16}/>{error}<button onClick={()=>setError('')}><X size={16}/></button></div>}{loading&&<div className="loading-bar"/>}{content}<footer>okDriver Sentinel · Synthetic demonstration data · {selectedCenter.name||selectedCenter.id} Command Center</footer></div></main>
-    {showIdentifier&&<div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&setShowIdentifier(false)}><form className="modal" onSubmit={addIdentifier}><div className="modal-head"><div><h2>Add watchlist identifier</h2><p className="muted small">A match creates an alert for future detections.</p></div><button type="button" className="icon-button" onClick={()=>setShowIdentifier(false)}><X/></button></div><label>Vehicle / identifier number<input autoFocus required maxLength={32} value={identifier.identifier} onChange={e=>setIdentifier({...identifier,identifier:e.target.value.toUpperCase()})} placeholder="e.g. GJ01AB1234"/></label><div className="form-grid"><label>Entity type<select value={identifier.entity_type} onChange={e=>setIdentifier({...identifier,entity_type:e.target.value})}><option>Vehicle</option><option>Person</option><option>Other</option></select></label><label>Priority<select value={identifier.priority} onChange={e=>setIdentifier({...identifier,priority:e.target.value})}><option>Low</option><option>Medium</option><option>High</option></select></label></div><label>Reason<textarea value={identifier.reason} onChange={e=>setIdentifier({...identifier,reason:e.target.value})} placeholder="Why is this identifier monitored?"/></label><div className="modal-actions"><Button kind="secondary" onClick={()=>setShowIdentifier(false)}>Cancel</Button><Button type="submit"><Plus size={16}/> Save identifier</Button></div></form></div>}
-    {showCamera&&<div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&setShowCamera(false)}><form className="modal" onSubmit={addCamera}><div className="modal-head"><div><h2>Register camera</h2><p className="muted small">Adds a camera source to the selected city command center.</p></div><button type="button" className="icon-button" onClick={()=>setShowCamera(false)}><X/></button></div><div className="form-grid"><label>Camera ID<input required maxLength={20} value={cameraDraft.id} onChange={e=>setCameraDraft({...cameraDraft,id:e.target.value.toUpperCase()})} placeholder="CAM-101"/></label><label>Camera name<input required value={cameraDraft.name} onChange={e=>setCameraDraft({...cameraDraft,name:e.target.value})} placeholder="Junction name"/></label></div><div className="form-grid"><label>Latitude<input required type="number" step="any" value={cameraDraft.latitude} onChange={e=>setCameraDraft({...cameraDraft,latitude:e.target.value})}/></label><label>Longitude<input required type="number" step="any" value={cameraDraft.longitude} onChange={e=>setCameraDraft({...cameraDraft,longitude:e.target.value})}/></label></div><div className="form-grid"><label>Department<input required value={cameraDraft.department} onChange={e=>setCameraDraft({...cameraDraft,department:e.target.value})}/></label><label>Zone<input required value={cameraDraft.zone} onChange={e=>setCameraDraft({...cameraDraft,zone:e.target.value})}/></label></div><label>Endpoint reference<input required value={cameraDraft.endpoint_ref} onChange={e=>setCameraDraft({...cameraDraft,endpoint_ref:e.target.value})}/></label><div className="modal-actions"><Button kind="secondary" onClick={()=>setShowCamera(false)}>Cancel</Button><Button type="submit"><Plus size={16}/> Register camera</Button></div></form></div>}
-    {toast&&<div className="toast"><ShieldCheck size={16}/>{toast}</div>}</div>;
+  return (
+    <div className="app-shell">
+      <aside className="sidebar">
+        <div className="brand">
+          <div className="brand-mark">
+            <Command size={20} />
+          </div>
+          <div>
+            <b>okDriver</b>
+            <span>SENTINEL · CONTROL</span>
+          </div>
+        </div>
+        <label className="center-label">
+          COMMAND CENTER
+          <select
+            value={selectedCenter.id}
+            onChange={(e) => {
+              setCenter(
+                allowedCenters.find((c) => c.id === e.target.value) ||
+                  centers[0],
+              );
+              setSelectedVehicle("");
+              setAlertQuery("");
+              setAlertStatus("All statuses");
+              setTraceQuery("");
+              setTraceEvents([]);
+              setEntities([]);
+              setEntityQuery("");
+              setPage("Overview");
+            }}
+          >
+            {centers
+              .filter(
+                (c) =>
+                  user?.role === "admin" ||
+                  allowedCenters.some((a) => a.id === c.id),
+              )
+              .map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.id} · {c.state}
+                </option>
+              ))}
+          </select>
+        </label>
+        <div className="nav-label">WORKSPACE</div>
+        <nav>
+          {nav.map(([label, Icon]) => (
+            <button
+              key={label}
+              className={cx("nav-item", page === label && "active")}
+              onClick={() => setPage(label)}
+            >
+              <Icon size={18} />
+              <span>{label}</span>
+              {label === "Alert Center" && openAlerts > 0 && (
+                <i>{openAlerts}</i>
+              )}
+            </button>
+          ))}
+        </nav>
+        <div className="sidebar-spacer" />
+        <div className="role-card">
+          <div className="role-avatar">
+            {user?.role === "admin" ? (
+              <ShieldCheck size={18} />
+            ) : (
+              <Users size={18} />
+            )}
+          </div>
+          <div>
+            <b>{user?.username}</b>
+            <span>
+              {user?.role === "admin" ? "Administrator" : "Command Operator"}
+            </span>
+          </div>
+          <button
+            title="Role permissions"
+            onClick={() =>
+              setToast(
+                user?.role === "admin"
+                  ? "Admin: see all command centers and audit activity; manage watchlist identifiers and camera records."
+                  : "Operator: work within the assigned command center, review/trace detections, update alerts, and see own/admin audit activity.",
+              )
+            }
+          >
+            <CircleHelp size={16} />
+          </button>
+        </div>
+        <button className="logout" onClick={signOut}>
+          <LogOut size={17} /> Sign out
+        </button>
+      </aside>
+      <main className="main">
+        <div className="topbar">
+          <div className="crumb">
+            <span>Sentinel</span>
+            <span>/</span>
+            <b>{page}</b>
+          </div>
+          <div className="top-actions">
+            <span className="state-pill">
+              <span /> Data scoped to {selectedCenter.name || selectedCenter.id}
+            </span>
+            <button
+              className="icon-button"
+              title="Refresh"
+              onClick={() => load()}
+            >
+              <Activity size={18} />
+            </button>
+            <button className="profile" onClick={signOut}>
+              {user?.username?.slice(0, 1).toUpperCase()}
+            </button>
+          </div>
+        </div>
+        <div className="content">
+          {error && (
+            <div className="error-banner">
+              <AlertTriangle size={16} />
+              {error}
+              <button onClick={() => setError("")}>
+                <X size={16} />
+              </button>
+            </div>
+          )}
+          {loading && <div className="loading-bar" />}
+          {content}
+          <footer>
+            okDriver Sentinel · Synthetic demonstration data ·{" "}
+            {selectedCenter.name || selectedCenter.id} Command Center
+          </footer>
+        </div>
+      </main>
+      {showIdentifier && (
+        <div
+          className="modal-backdrop"
+          onMouseDown={(e) =>
+            e.target === e.currentTarget && setShowIdentifier(false)
+          }
+        >
+          <form className="modal" onSubmit={addIdentifier}>
+            <div className="modal-head">
+              <div>
+                <h2>Add watchlist identifier</h2>
+                <p className="muted small">
+                  A match creates an alert for future detections.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => setShowIdentifier(false)}
+              >
+                <X />
+              </button>
+            </div>
+            <label>
+              Vehicle / identifier number
+              <input
+                autoFocus
+                required
+                maxLength={32}
+                value={identifier.identifier}
+                onChange={(e) =>
+                  setIdentifier({
+                    ...identifier,
+                    identifier: e.target.value.toUpperCase(),
+                  })
+                }
+                placeholder="e.g. GJ01AB1234"
+              />
+            </label>
+            <div className="form-grid">
+              <label>
+                Entity type
+                <select
+                  value={identifier.entity_type}
+                  onChange={(e) =>
+                    setIdentifier({
+                      ...identifier,
+                      entity_type: e.target.value,
+                    })
+                  }
+                >
+                  <option>Vehicle</option>
+                  <option>Person</option>
+                  <option>Other</option>
+                </select>
+              </label>
+              <label>
+                Priority
+                <select
+                  value={identifier.priority}
+                  onChange={(e) =>
+                    setIdentifier({ ...identifier, priority: e.target.value })
+                  }
+                >
+                  <option>Low</option>
+                  <option>Medium</option>
+                  <option>High</option>
+                </select>
+              </label>
+            </div>
+            <label>
+              Reason
+              <textarea
+                value={identifier.reason}
+                onChange={(e) =>
+                  setIdentifier({ ...identifier, reason: e.target.value })
+                }
+                placeholder="Why is this identifier monitored?"
+              />
+            </label>
+            <div className="modal-actions">
+              <Button kind="secondary" onClick={() => setShowIdentifier(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                <Plus size={16} /> Save identifier
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
+      {showCamera && (
+        <div
+          className="modal-backdrop"
+          onMouseDown={(e) =>
+            e.target === e.currentTarget && setShowCamera(false)
+          }
+        >
+          <form className="modal" onSubmit={addCamera}>
+            <div className="modal-head">
+              <div>
+                <h2>Register camera</h2>
+                <p className="muted small">
+                  Adds a camera source to the selected city command center.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => setShowCamera(false)}
+              >
+                <X />
+              </button>
+            </div>
+            <div className="form-grid">
+              <label>
+                Camera ID
+                <input
+                  required
+                  maxLength={20}
+                  value={cameraDraft.id}
+                  onChange={(e) =>
+                    setCameraDraft({
+                      ...cameraDraft,
+                      id: e.target.value.toUpperCase(),
+                    })
+                  }
+                  placeholder="CAM-101"
+                />
+              </label>
+              <label>
+                Camera name
+                <input
+                  required
+                  value={cameraDraft.name}
+                  onChange={(e) =>
+                    setCameraDraft({ ...cameraDraft, name: e.target.value })
+                  }
+                  placeholder="Junction name"
+                />
+              </label>
+            </div>
+            <div className="form-grid">
+              <label>
+                Latitude
+                <input
+                  required
+                  type="number"
+                  step="any"
+                  value={cameraDraft.latitude}
+                  onChange={(e) =>
+                    setCameraDraft({ ...cameraDraft, latitude: e.target.value })
+                  }
+                />
+              </label>
+              <label>
+                Longitude
+                <input
+                  required
+                  type="number"
+                  step="any"
+                  value={cameraDraft.longitude}
+                  onChange={(e) =>
+                    setCameraDraft({
+                      ...cameraDraft,
+                      longitude: e.target.value,
+                    })
+                  }
+                />
+              </label>
+            </div>
+            <div className="form-grid">
+              <label>
+                Department
+                <input
+                  required
+                  value={cameraDraft.department}
+                  onChange={(e) =>
+                    setCameraDraft({
+                      ...cameraDraft,
+                      department: e.target.value,
+                    })
+                  }
+                />
+              </label>
+              <label>
+                Zone
+                <input
+                  required
+                  value={cameraDraft.zone}
+                  onChange={(e) =>
+                    setCameraDraft({ ...cameraDraft, zone: e.target.value })
+                  }
+                />
+              </label>
+            </div>
+            <label>
+              Endpoint reference
+              <input
+                required
+                value={cameraDraft.endpoint_ref}
+                onChange={(e) =>
+                  setCameraDraft({
+                    ...cameraDraft,
+                    endpoint_ref: e.target.value,
+                  })
+                }
+              />
+            </label>
+            <div className="modal-actions">
+              <Button kind="secondary" onClick={() => setShowCamera(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                <Plus size={16} /> Register camera
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
+      {toast && (
+        <div className="toast">
+          <ShieldCheck size={16} />
+          {toast}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default App;
