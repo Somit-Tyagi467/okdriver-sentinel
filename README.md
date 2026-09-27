@@ -257,4 +257,4 @@ This prototype intentionally uses one Python process and SQLite. For a larger in
 
 ## Reference
 
-The assignment's official hackathon reference is [Gujarat Police Innovation Hackathon — problem statements](https://sentinel.gujarat.gov.in/problems). It could not be opened from the authoring environment; this implementation uses the technical requirements reproduced in the supplied assignment PDF.
+The assignment's official hackathon reference is [Gujarat Police Innovation Hackathon — problem statements](https://sentinel.gujarat.gov.in/problems).
